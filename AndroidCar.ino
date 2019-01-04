@@ -1,97 +1,81 @@
-
-
 #include <SoftwareSerial.h>
-SoftwareSerial ble(2, 3); // RX, TX
 
+//PWM
 #define Lpwm_pin  5     //adjusting speed  
 #define Rpwm_pin  10    //adjusting speed  //
-int pinLB=2;     // defining pin2 left rear
-int pinLF=4;     // defining pin4 left front
-int pinRB=7;    // defining pin7 right rear
-int pinRF=8;    // defining pin8 right front
 unsigned char Lpwm_val = 150;
 unsigned char Rpwm_val = 150;
-int Car_state=0;
-int current_byte = 0;
-int prev_byte; 
+
+//Pines Salida
+int pinLB=2;    // defining pin2 left Tracero
+int pinLF=4;    // defining pin4 left Delantero
+int pinRB=7;    // defining pin7 right Tracero
+int pinRF=8;    // defining pin8 right Delantero
+
+//Variables
+int currentByte = 0;
+int prevByte; 
+
+//Bluetooth
+int rxBluetooth = 2;
+int txBluetooth = 3; 
+SoftwareSerial ble(rxBluetooth, txBluetooth); // RX, TX
 
 //Funciones de Motor
-void M_Control_IO_config(void)
+void pinesConfiugracion(void)
 {
-  pinMode(pinLB,OUTPUT); // pin 2
-  pinMode(pinLF,OUTPUT); // pin 4
-  pinMode(pinRB,OUTPUT); // pin 7 
-  pinMode(pinRF,OUTPUT); // pin 8
-  pinMode(Lpwm_pin,OUTPUT); // pin 11 (PWM) 
-  pinMode(Rpwm_pin,OUTPUT); // pin 10 (PWM)   
-}
-void Set_Speed(unsigned char Left,unsigned char Right)
-{
-  analogWrite(Lpwm_pin,Left);
-  analogWrite(Rpwm_pin,Right);
-}
-
-//Funciones Principales
-void setup() 
-{ 
-   M_Control_IO_config();
-   Set_Speed(Lpwm_val,Rpwm_val);
-   Serial.begin(9600);   //initialized serial port , using Bluetooth as serial port, setting baud at 9600 
-   ble.begin(9600);
-   stopp(); 
-}
-void loop()
-{
-    if (ble.available() > 0)
-    {
-        current_byte = ble.read();
-        outputs_set();
-        prev_byte = current_byte;
-    }
+  pinMode(pinLB,OUTPUT); 
+  pinMode(pinLF,OUTPUT); 
+  pinMode(pinRB,OUTPUT); 
+  pinMode(pinRF,OUTPUT); 
+  pinMode(Lpwm_pin,OUTPUT); 
+  pinMode(Rpwm_pin,OUTPUT);
+  analogWrite(Lpwm_pin,Lpwm_val);
+  analogWrite(Rpwm_pin,Rpwm_val);
 }
 
 void output_sets()
 {
     //Motores Right
-    if (prev_byte == 202)
+    if (prevByte == 202)
     {
-        if (current_byte <= 100)
+        if (currentByte <= 100)
         {
             digitalWrite(pinRB, HIGH);
             digitalWrite(pinRF, LOW);
-            Serial.print("R <= 100")
+            Serial.print("R <= 100\r\n");
         }
-        if (current_byte > 100)
+        if (currentByte > 100)
         {
             digitalWrite(pinRF, HIGH);
             digitalWrite(pinRB, LOW);
-            Serial.print("R > 100")
+            Serial.print("R > 100\r\n");
         }
     }
 
     //Motores Left
-    if (prev_byte == 203)
+    if (prevByte == 203)
     {
-        if (current_byte <= 100)
+        if (currentByte <= 100)
         {
             digitalWrite(pinLB, HIGH);
             digitalWrite(pinLF, LOW);
-            Serial.print("L <= 100")
+            Serial.print("L <= 100\r\n");
         }
 
-        if (current_byte > 100)
+        if (currentByte > 100)
         {
             digitalWrite(pinLF, HIGH);
             digitalWrite(pinLB, LOW);
-            Serial.print("R > 100")
+            Serial.print("R > 100\r\n");
         }
     }
 
     //stop
-    if (prev_byte == 213 && current_byte == 99)
+    if (prevByte == 213 && currentByte == 99)
     {
         stopp();
-        Serial.print("STOP")
+        Serial.print("STOP\r\n");
     }
 } 
 
@@ -101,5 +85,27 @@ void stopp() //stop
     digitalWrite(pinRF, HIGH);
     digitalWrite(pinLB, HIGH);
     digitalWrite(pinLF, HIGH);
-    Car_state = 5;
 }
+
+//Funciones Principales
+void setup() 
+{ 
+   pinesConfiugracion();
+   Serial.begin(9600);
+   Serial.print("Configuro Bluetooth\r\n");
+   ble.begin(9600);
+   Serial.print("Stop\r\n");
+   stopp(); 
+}
+void loop()
+{
+    if (ble.available() > 0)
+    {
+        currentByte = ble.read();
+        output_sets();
+        prevByte = currentByte;
+    }
+}
+
+
+

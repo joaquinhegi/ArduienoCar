@@ -1,25 +1,24 @@
 #include <SoftwareSerial.h>
 
+SoftwareSerial BT1(9, 6);// RX, TX
+
 //PWM
-#define Lpwm_pin  5     //adjusting speed  
-#define Rpwm_pin  10    //adjusting speed  //
-unsigned char Lpwm_val = 150;
-unsigned char Rpwm_val = 150;
+#define Lpwm_pin 10     //adjusting speed  
+#define Rpwm_pin 5    //adjusting speed  //
+unsigned char Lpwm_val = 130;
+unsigned char Rpwm_val = 130;
 
 //Pines Salida
-int pinLB=2;    // defining pin2 left Tracero
-int pinLF=4;    // defining pin4 left Delantero
-int pinRB=7;    // defining pin7 right Tracero
-int pinRF=8;    // defining pin8 right Delantero
+int pinLB=7;    // defining pin2 left Tracero
+int pinLF=8;    // defining pin4 left Delantero
+int pinRB=2;    // defining pin7 right Tracero
+int pinRF=4;    // defining pin8 right Delantero
 
 //Variables
 int currentByte = 0;
-int prevByte; 
+int prevByte = 0; 
 
-//Bluetooth
-int rxBluetooth = 2;
-int txBluetooth = 3; 
-SoftwareSerial ble(rxBluetooth, txBluetooth); // RX, TX
+
 
 //Funciones de Motor
 void pinesConfiugracion(void)
@@ -30,8 +29,6 @@ void pinesConfiugracion(void)
   pinMode(pinRF,OUTPUT); 
   pinMode(Lpwm_pin,OUTPUT); 
   pinMode(Rpwm_pin,OUTPUT);
-  analogWrite(Lpwm_pin,Lpwm_val);
-  analogWrite(Rpwm_pin,Rpwm_val);
 }
 
 void output_sets()
@@ -43,13 +40,25 @@ void output_sets()
         {
             digitalWrite(pinRB, HIGH);
             digitalWrite(pinRF, LOW);
-            Serial.print("R <= 100\r\n");
+            //
+            int aux = (currentByte)*2.35;
+            if(aux > Rpwm_val)
+               aux = Rpwm_val;
+            analogWrite(Rpwm_pin,aux);
+            //
+            Serial.println("R <= 100" );
         }
         if (currentByte > 100)
         {
             digitalWrite(pinRF, HIGH);
             digitalWrite(pinRB, LOW);
-            Serial.print("R > 100\r\n");
+            //
+            int aux = (currentByte-100)*2.35;
+            if(aux > Rpwm_val)
+               aux = Rpwm_val;
+            analogWrite(Rpwm_pin,aux);
+            //
+            Serial.println("R > 100");
         }
     }
 
@@ -60,14 +69,26 @@ void output_sets()
         {
             digitalWrite(pinLB, HIGH);
             digitalWrite(pinLF, LOW);
-            Serial.print("L <= 100\r\n");
+            //
+            int aux = (currentByte)*2.35;
+            if(aux > Rpwm_val)
+               aux = Rpwm_val;
+            analogWrite(Lpwm_pin,aux); 
+            //   
+            Serial.println("L <= 100");
         }
 
         if (currentByte > 100)
         {
             digitalWrite(pinLF, HIGH);
             digitalWrite(pinLB, LOW);
-            Serial.print("R > 100\r\n");
+            //
+            int aux = (currentByte-199)*2.35;
+            if(aux > Rpwm_val)
+               aux = Rpwm_val;
+            analogWrite(Lpwm_pin,aux);
+            //
+            Serial.println("L > 100");
         }
     }
 
@@ -75,7 +96,7 @@ void output_sets()
     if (prevByte == 213 && currentByte == 99)
     {
         stopp();
-        Serial.print("STOP\r\n");
+        Serial.println("STOP");
     }
 } 
 
@@ -92,18 +113,22 @@ void setup()
 { 
    pinesConfiugracion();
    Serial.begin(9600);
-   Serial.print("Configuro Bluetooth\r\n");
-   ble.begin(9600);
-   Serial.print("Stop\r\n");
-   stopp(); 
+   Serial.println("Configuro Bluetooth");
+   BT1.begin(9600);
+   Serial.println("Stop");
+   stopp();
+   
 }
 void loop()
 {
-    if (ble.available() > 0)
+
+    if (BT1.available())
     {
-        currentByte = ble.read();
+        currentByte = BT1.read();
+        //Serial.println(currentByte);  
         output_sets();
         prevByte = currentByte;
+       // Serial.print(prevByte);
     }
 }
 
